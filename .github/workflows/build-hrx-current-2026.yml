@@ -3,7 +3,9 @@ name: Build HRX current 2026 data
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/build-hrx-current-2026.yml']
+    paths:
+      - '.github/workflows/build-hrx-current-2026.yml'
+      - 'scripts/fetch_aug28_statsapi.py'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +21,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
-        run: python -m pip install --upgrade pip pandas pyarrow
+        run: python -m pip install --upgrade pip pandas pyarrow requests
       - name: Download current public Retrosheet supplements
         run: |
           mkdir -p source output
@@ -27,7 +29,7 @@ jobs:
             curl --fail --location --retry 3 -o source/${f}.parquet \
               https://raw.githubusercontent.com/gmalbert/baseball-predictions/main/data_files/retrosheet/${f}.parquet
           done
-      - name: Filter through 2026-08-28 and export compressed CSV
+      - name: Filter current supplements and export compressed CSV
         shell: python
         run: |
           import json
@@ -54,6 +56,8 @@ jobs:
             audit[name]={'rows':int(len(df)),'columns':keep,'min_date':str(df['date'].min()) if 'date' in df.columns and len(df) else None,'max_date':str(df['date'].max()) if 'date' in df.columns and len(df) else None,'bytes':dest.stat().st_size}
           with open(out/'audit.json','w') as f: json.dump(audit,f,indent=2)
           print(json.dumps(audit,indent=2))
+      - name: Pull Aug 28 MLB box scores to close supplement lag
+        run: python scripts/fetch_aug28_statsapi.py
       - name: Upload current HRX inputs
         uses: actions/upload-artifact@v4
         with:
