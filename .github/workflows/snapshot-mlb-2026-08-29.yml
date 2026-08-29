@@ -1,0 +1,75 @@
+name: Snapshot MLB 2026-08-29 inputs
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/snapshot-mlb-2026-08-29.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: python -m pip install --upgrade requests pandas
+      - name: Fetch official MLB schedule, probable pitchers and posted lineups
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          import requests, pandas as pd
+
+          DATE='2026-08-29'
+          out=Path('snapshot'); out.mkdir(exist_ok=True)
+          def get(url, params=None):
+              r=requests.get(url,params=params,timeout=30); r.raise_for_status(); return r.json()
+          sched=get('https://statsapi.mlb.com/api/v1/schedule',{
+              'sportId':1,'date':DATE,'hydrate':'probablePitcher,team,venue'
+          })
+          games=[]
+          for d in sched.get('dates',[]): games.extend(d.get('games',[]))
+          grow=[]; lrow=[]
+          for g in games:
+              pk=g['gamePk']; away=g['teams']['away']['team']; home=g['teams']['home']['team']
+              ap=g['teams']['away'].get('probablePitcher') or {}; hp=g['teams']['home'].get('probablePitcher') or {}
+              grow.append({
+                  'gamePk':pk,'gameDate':g.get('gameDate'),'status':g.get('status',{}).get('detailedState'),
+                  'away_id':away.get('id'),'away_name':away.get('name'),'home_id':home.get('id'),'home_name':home.get('name'),
+                  'venue_id':(g.get('venue') or {}).get('id'),'venue_name':(g.get('venue') or {}).get('name'),
+                  'away_probable_id':ap.get('id'),'away_probable_name':ap.get('fullName'),
+                  'home_probable_id':hp.get('id'),'home_probable_name':hp.get('fullName'),
+                  'doubleHeader':g.get('doubleHeader'),'gameNumber':g.get('gameNumber')
+              })
+              box=get(f'https://statsapi.mlb.com/api/v1/game/{pk}/boxscore')
+              for side in ['away','home']:
+                  team=box.get('teams',{}).get(side,{})
+                  order=team.get('battingOrder') or []
+                  players=team.get('players') or {}
+                  for slot,pid in enumerate(order,1):
+                      obj=players.get('ID'+str(pid),{})
+                      lrow.append({
+                          'gamePk':pk,'side':side,'team_id':away.get('id') if side=='away' else home.get('id'),
+                          'team_name':away.get('name') if side=='away' else home.get('name'),
+                          'lineup_slot':slot,'player_id':int(pid),'player_name':(obj.get('person') or {}).get('fullName'),
+                          'position':((obj.get('position') or {}).get('abbreviation'))
+                      })
+          pd.DataFrame(grow).to_csv(out/'games.csv',index=False)
+          pd.DataFrame(lrow).to_csv(out/'posted_lineups.csv',index=False)
+          audit={'date':DATE,'games':len(grow),'posted_lineup_rows':len(lrow),'teams_with_posted_lineups':len(set((r['gamePk'],r['side']) for r in lrow))}
+          (out/'audit.json').write_text(json.dumps(audit,indent=2))
+          print(json.dumps(audit,indent=2))
+      - name: Upload MLB snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlb-2026-08-29-snapshot
+          path: snapshot/
+          if-no-files-found: error
+          retention-days: 2
