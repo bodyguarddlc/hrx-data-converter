@@ -1,0 +1,63 @@
+name: Build HRX current 2026 data
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/build-hrx-current-2026.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip pandas pyarrow
+      - name: Download current public Retrosheet supplements
+        run: |
+          mkdir -p source output
+          for f in batting_current pitching_current gameinfo_current allplayers_current; do
+            curl --fail --location --retry 3 -o source/${f}.parquet \
+              https://raw.githubusercontent.com/gmalbert/baseball-predictions/main/data_files/retrosheet/${f}.parquet
+          done
+      - name: Filter through 2026-08-28 and export compressed CSV
+        shell: python
+        run: |
+          import json
+          from pathlib import Path
+          import pandas as pd
+          src=Path('source'); out=Path('output'); out.mkdir(exist_ok=True)
+          start,end=20260101,20260828
+          specs={
+            'batting_current':['gid','id','team','b_pa','b_ab','b_r','b_h','b_d','b_t','b_hr','b_rbi','b_w','b_k','b_sb','b_hbp','b_sf','date','vishome','opp','win','loss'],
+            'pitching_current':['gid','id','team','p_ipouts','p_bfp','p_h','p_hr','p_r','p_er','p_w','p_iw','p_k','p_hbp','p_wp','p_bk','p_gs','p_gf','p_cg','wp','lp','save','date','vishome','opp','win','loss'],
+            'gameinfo_current':['gid','visteam','hometeam','site','date','number','daynight','usedh','innings','timeofgame','attendance','fieldcond','precip','sky','temp','winddir','windspeed','vruns','hruns','wteam','lteam','season'],
+            'allplayers_current':['id','first','last','team','bat','throw','pos','season']
+          }
+          audit={}
+          for name,wanted in specs.items():
+            df=pd.read_parquet(src/f'{name}.parquet')
+            if 'date' in df.columns:
+              d=pd.to_numeric(df['date'].astype(str).str.replace('-','',regex=False).str[:8],errors='coerce')
+              df=df[(d>=start)&(d<=end)].copy()
+            elif 'season' in df.columns:
+              s=pd.to_numeric(df['season'],errors='coerce'); df=df[s==2026].copy()
+            keep=[c for c in wanted if c in df.columns]; df=df[keep]
+            dest=out/f'{name}_through_2026-08-28.csv.gz'; df.to_csv(dest,index=False,compression='gzip')
+            audit[name]={'rows':int(len(df)),'columns':keep,'min_date':str(df['date'].min()) if 'date' in df.columns and len(df) else None,'max_date':str(df['date'].max()) if 'date' in df.columns and len(df) else None,'bytes':dest.stat().st_size}
+          with open(out/'audit.json','w') as f: json.dump(audit,f,indent=2)
+          print(json.dumps(audit,indent=2))
+      - name: Upload current HRX inputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: hrx-retrosheet-current-2026
+          path: output/
+          if-no-files-found: error
+          retention-days: 7
