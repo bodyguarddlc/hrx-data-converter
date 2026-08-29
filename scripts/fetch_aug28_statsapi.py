@@ -5,8 +5,8 @@ import requests
 
 DATE='2026-08-28'
 OUT=Path('output'); OUT.mkdir(exist_ok=True)
-TEAM={
-'ARI':'ARI','ATL':'ATL','BAL':'BAL','BOS':'BOS','CHC':'CHN','CWS':'CHA','CIN':'CIN','CLE':'CLE','COL':'COL','DET':'DET','HOU':'HOU','KC':'KCA','LAA':'ANA','LAD':'LAN','MIA':'MIA','MIL':'MIL','MIN':'MIN','NYM':'NYN','NYY':'NYA','ATH':'ATH','PHI':'PHI','PIT':'PIT','SD':'SDN','SEA':'SEA','SF':'SFN','STL':'SLN','TB':'TBA','TEX':'TEX','TOR':'TOR','WSH':'WAS'
+TEAM_NAME={
+'Arizona Diamondbacks':'ARI','Atlanta Braves':'ATL','Baltimore Orioles':'BAL','Boston Red Sox':'BOS','Chicago Cubs':'CHN','Chicago White Sox':'CHA','Cincinnati Reds':'CIN','Cleveland Guardians':'CLE','Colorado Rockies':'COL','Detroit Tigers':'DET','Houston Astros':'HOU','Kansas City Royals':'KCA','Los Angeles Angels':'ANA','Los Angeles Dodgers':'LAN','Miami Marlins':'MIA','Milwaukee Brewers':'MIL','Minnesota Twins':'MIN','New York Mets':'NYN','New York Yankees':'NYA','Athletics':'ATH','Philadelphia Phillies':'PHI','Pittsburgh Pirates':'PIT','San Diego Padres':'SDN','Seattle Mariners':'SEA','San Francisco Giants':'SFN','St. Louis Cardinals':'SLN','Tampa Bay Rays':'TBA','Texas Rangers':'TEX','Toronto Blue Jays':'TOR','Washington Nationals':'WAS'
 }
 
 def get(url,params=None):
@@ -27,7 +27,7 @@ bat=[]; pit=[]; gi=[]
 for g in games:
     pk=g['gamePk']; box=get(f'https://statsapi.mlb.com/api/v1/game/{pk}/boxscore')
     away=g['teams']['away']['team']; home=g['teams']['home']['team']
-    ac=TEAM.get(away.get('abbreviation')); hc=TEAM.get(home.get('abbreviation'))
+    ac=TEAM_NAME.get(away.get('name')); hc=TEAM_NAME.get(home.get('name'))
     if not ac or not hc: raise RuntimeError(f'unknown team mapping {away} {home}')
     gid=f'{hc}{DATE.replace("-","")}0'
     ar=g['teams']['away'].get('score',0) or 0; hr=g['teams']['home'].get('score',0) or 0
