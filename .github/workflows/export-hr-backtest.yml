@@ -1,0 +1,24 @@
+name: Export HR backtest report
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/export-hr-backtest.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload backtest report
+        uses: actions/upload-artifact@v4
+        with:
+          name: hr-backtest-annual-2024-2026
+          path: backtest/annual-2024-2026/annual_backtest_2024_2026.zip
+          if-no-files-found: error
+          retention-days: 7
