@@ -40,7 +40,7 @@ def build_pa(p):
     pa=pa[pa.events.notna()].copy()
     pa['is_hr']=pa.events.eq('home_run').astype('int8')
     ls=pd.to_numeric(pa.launch_speed,errors='coerce'); la=pd.to_numeric(pa.launch_angle,errors='coerce'); lsa=pd.to_numeric(pa.launch_speed_angle,errors='coerce')
-    pa['is_bbe']=ls.notna().astype('int8'); pa['barrel']=lsa.eq(6).astype('int8'); pa['hard_hit']=(ls>=95).fillna(False).astype('int8'); pa['sweet_spot']=la.between(8,32,inclusive='both').fillna(False).astype('int8'); pa['ev_sum']=ls.fillna(0.).astype('float32')
+    pa['is_bbe']=ls.notna().astype('int8'); pa['barrel']=lsa.eq(6).fillna(False).astype('int8'); pa['hard_hit']=(ls>=95).fillna(False).astype('int8'); pa['sweet_spot']=la.between(8,32,inclusive='both').fillna(False).astype('int8'); pa['ev_sum']=ls.fillna(0.).astype('float32')
     top=pa.inning_topbot.astype(str).str.lower().str.startswith('top')
     pa['bat_team']=np.where(top,pa.away_team,pa.home_team); pa['fld_team']=np.where(top,pa.home_team,pa.away_team); pa['is_home']=(~top).astype('int8')
     first=(pa.groupby(['game_pk','bat_team','batter'],as_index=False).at_bat_number.min().sort_values(['game_pk','bat_team','at_bat_number','batter']))
