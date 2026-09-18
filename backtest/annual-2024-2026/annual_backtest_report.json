@@ -1,0 +1,219 @@
+{
+  "design": "expanding-window annual out-of-sample backtest; each test season trained only on prior seasons; all rolling features shifted by one game",
+  "source_start": "2023-03-30",
+  "source_end": "2026-09-17",
+  "regular_season_only": true,
+  "folds": [
+    {
+      "year": 2024,
+      "train_start": "2023-03-30",
+      "train_end": "2023-10-01",
+      "test_start": "2024-03-20",
+      "test_end": "2024-09-30",
+      "train_pa_rows": 177542,
+      "test_pa_rows": 175952,
+      "test_game_hitter_rows": 43722,
+      "test_hr_rate_pa": 0.03013890151859598,
+      "test_hr_rate_game": 0.11397008371071772,
+      "always_no_hr_game_accuracy": 0.8860299162892823,
+      "calibration_split_date": "2023-09-04",
+      "pa_metrics": {
+        "log_loss": 0.1340107453579841,
+        "brier": 0.029162948789234547,
+        "pr_auc": 0.03990603672458398,
+        "roc_auc": 0.5833697112438097
+      },
+      "game_metrics": {
+        "log_loss": 0.3503970539220148,
+        "brier": 0.10021081654911046,
+        "pr_auc": 0.1527022100510656,
+        "roc_auc": 0.5953760144257118
+      },
+      "game_ece_10bin": 0.019158501945493275,
+      "baseline_40game_game_metrics": {
+        "log_loss": 0.38934534111541147,
+        "brier": 0.1015626634290151,
+        "pr_auc": 0.15053057016682156,
+        "roc_auc": 0.5905993721796678
+      },
+      "delta_vs_baseline": {
+        "log_loss": -0.03894828719339666,
+        "brier": -0.001351846879904639,
+        "pr_auc": 0.002171639884244042,
+        "roc_auc": 0.004776642246043905
+      },
+      "top5": {
+        "top_5_days_with_hit": 0.6648648648648648,
+        "top_5_pick_precision": 0.21081081081081082,
+        "top_5_days": 185,
+        "top_5_days_hit_count": 123,
+        "top_5_days_with_hit_95ci": [
+          0.59410136947422,
+          0.7289206765156465
+        ],
+        "top_5_total_hits": 195,
+        "top_5_total_picks": 925
+      },
+      "top10": {
+        "top_10_days_with_hit": 0.8432432432432433,
+        "top_10_pick_precision": 0.18054054054054053,
+        "top_10_days": 185,
+        "top_10_days_hit_count": 156,
+        "top_10_days_with_hit_95ci": [
+          0.7839369128238451,
+          0.8885843960403035
+        ],
+        "top_10_total_hits": 334,
+        "top_10_total_picks": 1850
+      }
+    },
+    {
+      "year": 2025,
+      "train_start": "2023-03-30",
+      "train_end": "2024-09-30",
+      "test_start": "2025-03-18",
+      "test_end": "2025-09-28",
+      "train_pa_rows": 353494,
+      "test_pa_rows": 176387,
+      "test_game_hitter_rows": 43740,
+      "test_hr_rate_pa": 0.031226791090046318,
+      "test_hr_rate_game": 0.11730681298582533,
+      "always_no_hr_game_accuracy": 0.8826931870141747,
+      "calibration_split_date": "2024-08-06",
+      "pa_metrics": {
+        "log_loss": 0.1371458152276779,
+        "brier": 0.030144793483468168,
+        "pr_auc": 0.04328367152110421,
+        "roc_auc": 0.5981706864667535
+      },
+      "game_metrics": {
+        "log_loss": 0.35405714915541325,
+        "brier": 0.10207446636117105,
+        "pr_auc": 0.16244854580877485,
+        "roc_auc": 0.6093794474230975
+      },
+      "game_ece_10bin": 0.007324473267129629,
+      "baseline_40game_game_metrics": {
+        "log_loss": 0.39308881736105633,
+        "brier": 0.1036123253008483,
+        "pr_auc": 0.16020358309611016,
+        "roc_auc": 0.6006240881658707
+      },
+      "delta_vs_baseline": {
+        "log_loss": -0.03903166820564308,
+        "brier": -0.0015378589396772419,
+        "pr_auc": 0.0022449627126646943,
+        "roc_auc": 0.008755359257226814
+      },
+      "top5": {
+        "top_5_days_with_hit": 0.7119565217391305,
+        "top_5_pick_precision": 0.21195652173913043,
+        "top_5_days": 184,
+        "top_5_days_hit_count": 131,
+        "top_5_days_with_hit_95ci": [
+          0.6427154722240082,
+          0.7725280095180554
+        ],
+        "top_5_total_hits": 195,
+        "top_5_total_picks": 920
+      },
+      "top10": {
+        "top_10_days_with_hit": 0.8804347826086957,
+        "top_10_pick_precision": 0.19510869565217392,
+        "top_10_days": 184,
+        "top_10_days_hit_count": 162,
+        "top_10_days_with_hit_95ci": [
+          0.8256073335777009,
+          0.91970147980549
+        ],
+        "top_10_total_hits": 359,
+        "top_10_total_picks": 1840
+      }
+    },
+    {
+      "year": 2026,
+      "train_start": "2023-03-30",
+      "train_end": "2025-09-28",
+      "test_start": "2026-03-25",
+      "test_end": "2026-09-17",
+      "train_pa_rows": 529881,
+      "test_pa_rows": 166237,
+      "test_game_hitter_rows": 41292,
+      "test_hr_rate_pa": 0.030450501392590097,
+      "test_hr_rate_game": 0.11517969582485711,
+      "always_no_hr_game_accuracy": 0.8848203041751429,
+      "calibration_split_date": "2025-07-04",
+      "pa_metrics": {
+        "log_loss": 0.134832094439803,
+        "brier": 0.029440788846628173,
+        "pr_auc": 0.04081678391952881,
+        "roc_auc": 0.5891373676509009
+      },
+      "game_metrics": {
+        "log_loss": 0.3511325007187098,
+        "brier": 0.10071995297800046,
+        "pr_auc": 0.15673371918950324,
+        "roc_auc": 0.6005466968717146
+      },
+      "game_ece_10bin": 0.010659655050773625,
+      "baseline_40game_game_metrics": {
+        "log_loss": 0.39028468901762386,
+        "brier": 0.10277476353964529,
+        "pr_auc": 0.14865847460556814,
+        "roc_auc": 0.5875633734429335
+      },
+      "delta_vs_baseline": {
+        "log_loss": -0.03915218829891409,
+        "brier": -0.002054810561644832,
+        "pr_auc": 0.008075244583935104,
+        "roc_auc": 0.012983323428781057
+      },
+      "top5": {
+        "top_5_days_with_hit": 0.6666666666666666,
+        "top_5_pick_precision": 0.20919540229885059,
+        "top_5_days": 174,
+        "top_5_days_hit_count": 116,
+        "top_5_days_with_hit_95ci": [
+          0.593688954178168,
+          0.7324439641041685
+        ],
+        "top_5_total_hits": 182,
+        "top_5_total_picks": 870
+      },
+      "top10": {
+        "top_10_days_with_hit": 0.867816091954023,
+        "top_10_pick_precision": 0.2,
+        "top_10_days": 174,
+        "top_10_days_hit_count": 151,
+        "top_10_days_with_hit_95ci": [
+          0.8094621269494455,
+          0.9102794858115733
+        ],
+        "top_10_total_hits": 348,
+        "top_10_total_picks": 1740
+      }
+    }
+  ],
+  "pooled": {
+    "log_loss_weighted": 0.35187631386452517,
+    "brier_weighted": 0.10100721358688215,
+    "pr_auc_weighted": 0.15730613537677643,
+    "roc_auc_weighted": 0.6017914887322654,
+    "top_5_days_with_hit": 0.6813996316758748,
+    "top_5_days_with_hit_95ci": [
+      0.6410519516438252,
+      0.7191986218311993
+    ],
+    "top_5_pick_precision": 0.21068139963167587,
+    "top_5_days": 543,
+    "top_5_days_hit_count": 370,
+    "top_10_days_with_hit": 0.8637200736648251,
+    "top_10_days_with_hit_95ci": [
+      0.8322956647426097,
+      0.8900341653215257
+    ],
+    "top_10_pick_precision": 0.19171270718232045,
+    "top_10_days": 543,
+    "top_10_days_hit_count": 469
+  }
+}
