@@ -1,0 +1,48 @@
+{
+  "data_start": "2023-03-30",
+  "data_end": "2026-09-17",
+  "pitch_rows_after_filter": null,
+  "plate_appearances": 724390,
+  "feature_rows": 696118,
+  "holdout_start": "2026-01-01",
+  "holdout_pa_rows": 166237,
+  "holdout_hr_rate_pa": 0.030450501392590097,
+  "holdout_pa_metrics": {
+    "log_loss": 0.134832094439803,
+    "brier": 0.029440788846628173,
+    "pr_auc": 0.04081678391952881,
+    "roc_auc": 0.5891373676509009
+  },
+  "holdout_game_metrics": {
+    "log_loss": 0.3511325007187098,
+    "brier": 0.10071995297800046,
+    "pr_auc": 0.15673371918950324,
+    "roc_auc": 0.6005466968717146
+  },
+  "holdout_game_ece_10bin": 0.010659655050773565,
+  "top5": {
+    "top_5_days_with_hit": 0.6666666666666666,
+    "top_5_pick_precision": 0.20919540229885056,
+    "days": 174
+  },
+  "top10": {
+    "top_10_days_with_hit": 0.867816091954023,
+    "top_10_pick_precision": 0.2,
+    "days": 174
+  },
+  "holdout_calibration_split_date": "2025-07-04",
+  "baseline_40game_game_metrics": {
+    "log_loss": 0.39028468901762325,
+    "brier": 0.10277476353964526,
+    "pr_auc": 0.14865847460556814,
+    "roc_auc": 0.5875633734429335
+  },
+  "source_status": {
+    "september_patch": "fresh_pybaseball_baseball_savant",
+    "requested_start": "2026-09-01",
+    "requested_end": "2026-09-17",
+    "rows": 66675,
+    "min_date": "2026-09-01",
+    "max_date": "2026-09-17"
+  }
+}
