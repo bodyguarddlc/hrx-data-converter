@@ -4,8 +4,9 @@ import argparse
 import asyncio
 import json
 import os
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from .optimizer import OptimizerConfig
 from .scanner import scan_day
@@ -19,9 +20,9 @@ def _int_tuple(value: str) -> tuple[int, ...]:
     return tuple(int(x.strip()) for x in value.split(",") if x.strip())
 
 
-def _date(value: str) -> date:
+def _resolve_date(value: str, timezone_name: str) -> date:
     if value.lower() == "today":
-        return date.today()
+        return datetime.now(ZoneInfo(timezone_name)).date()
     return date.fromisoformat(value)
 
 
@@ -29,7 +30,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Scan same-day multi-region sports markets and optimize hit-rate/payout slips."
     )
-    p.add_argument("--date", default="today", type=_date)
+    p.add_argument("--date", default="today", help="YYYY-MM-DD or 'today'")
     p.add_argument("--timezone", default="America/Los_Angeles")
     p.add_argument("--regions", default="us,us2,uk,eu,au", type=_csv_tuple)
     p.add_argument("--markets", default="h2h,spreads,totals", type=_csv_tuple)
@@ -38,7 +39,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--min-books", default=2, type=int)
     p.add_argument("--min-prob", default=0.50, type=float)
     p.add_argument("--min-edge", default=0.0, type=float)
-    p.add_argument("--candidate-pool", default=80, type=int)
+    p.add_argument(
+        "--candidate-pool",
+        default=80,
+        type=int,
+        help="Top single-leg candidates to search; 0 means exhaustive over all filtered legs.",
+    )
     p.add_argument("--hit-weight", default=1.35, type=float)
     p.add_argument("--payout-weight", default=0.65, type=float)
     p.add_argument("--edge-weight", default=0.20, type=float)
@@ -52,6 +58,7 @@ async def _run(args: argparse.Namespace) -> int:
     if not api_key:
         raise SystemExit("ODDS_API_KEY is required")
 
+    target_date = _resolve_date(args.date, args.timezone)
     config = OptimizerConfig(
         min_fair_probability=args.min_prob,
         min_edge=args.min_edge,
@@ -63,7 +70,7 @@ async def _run(args: argparse.Namespace) -> int:
     )
     result = await scan_day(
         api_key=api_key,
-        target_date=args.date,
+        target_date=target_date,
         timezone_name=args.timezone,
         regions=args.regions,
         markets=args.markets,
@@ -74,6 +81,8 @@ async def _run(args: argparse.Namespace) -> int:
     )
 
     payload = {
+        "date": target_date.isoformat(),
+        "timezone": args.timezone,
         "events_scanned": result.events_scanned,
         "candidate_legs": result.candidate_legs,
         "slips": [x.to_dict() for x in result.slips],
