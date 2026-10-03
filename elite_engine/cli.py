@@ -14,9 +14,9 @@ from .engine import (
 )
 
 
-def _parse_day(value: str) -> date:
+def _resolve_day(value: str, timezone_name: str) -> date:
     if value.lower() == "today":
-        return date.today()
+        return datetime.now(ZoneInfo(timezone_name)).date()
     return date.fromisoformat(value)
 
 
@@ -37,7 +37,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="elite-engine",
         description="Quota-aware same-day sports odds scanner and ticket research optimizer.",
     )
-    p.add_argument("--date", default="today", type=_parse_day)
+    p.add_argument("--date", default="today")
     p.add_argument("--timezone", default="America/Los_Angeles")
     p.add_argument(
         "--regions",
@@ -69,10 +69,11 @@ def main() -> int:
     args = build_parser().parse_args()
     api_key = os.environ.get("THE_ODDS_API_KEY", "")
     provider = TheOddsAPI(api_key)
+    selected_day = _resolve_day(args.date, args.timezone)
 
     scan = scan_day(
         provider,
-        day=args.date,
+        day=selected_day,
         timezone_name=args.timezone,
         regions=args.regions,
         max_credits=args.max_credits,
