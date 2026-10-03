@@ -28,17 +28,13 @@ def optimize(
         x for x in legs
         if x.fair_probability >= config.min_fair_probability and x.edge >= config.min_edge
     ]
-    candidates.sort(
-        key=lambda x: (
-            (x.fair_probability ** config.hit_weight)
-            * (x.decimal_odds ** config.payout_weight)
-            * ((1.0 + max(x.edge, -0.99)) ** config.edge_weight)
-        ),
-        reverse=True,
-    )
-    candidates = candidates[: config.candidate_pool]
+    candidates.sort(key=lambda x: _leg_score(x, config), reverse=True)
 
-    slips: list[Slip] = []
+    # candidate_pool=0 enables an exhaustive search over every filtered leg.
+    if config.candidate_pool > 0:
+        candidates = candidates[: config.candidate_pool]
+
+    frontier: list[Slip] = []
     for count in sorted(set(leg_counts)):
         if count < 1:
             continue
@@ -49,42 +45,50 @@ def optimize(
             hit_probability = prod(x.fair_probability for x in combo)
             payout = prod(x.decimal_odds for x in combo)
             expected_return = hit_probability * payout
-
-            # Log-equivalent multiplicative objective:
-            # prioritizes probability, then payout, then positive pricing edge.
             score = (
                 (hit_probability ** config.hit_weight)
                 * (payout ** config.payout_weight)
                 * (prod(1.0 + max(x.edge, -0.99) for x in combo) ** config.edge_weight)
             )
-
-            slips.append(
-                Slip(
-                    legs=tuple(combo),
-                    hit_probability=hit_probability,
-                    payout_multiple=payout,
-                    expected_return=expected_return,
-                    score=score,
-                )
+            slip = Slip(
+                legs=tuple(combo),
+                hit_probability=hit_probability,
+                payout_multiple=payout,
+                expected_return=expected_return,
+                score=score,
             )
+            _insert_pareto(frontier, slip)
 
-    slips.sort(key=lambda s: (s.score, s.hit_probability, s.expected_return), reverse=True)
-    return _pareto_filter(slips)[:top_n]
+    frontier.sort(
+        key=lambda s: (s.score, s.hit_probability, s.expected_return, s.payout_multiple),
+        reverse=True,
+    )
+    return frontier[:top_n]
 
 
-def _pareto_filter(slips: list[Slip]) -> list[Slip]:
-    """Keep slips not strictly dominated on both hit probability and payout."""
-    frontier: list[Slip] = []
-    for slip in slips:
-        dominated = any(
-            other.hit_probability >= slip.hit_probability
-            and other.payout_multiple >= slip.payout_multiple
-            and (
-                other.hit_probability > slip.hit_probability
-                or other.payout_multiple > slip.payout_multiple
-            )
-            for other in frontier
+def _leg_score(leg: Leg, config: OptimizerConfig) -> float:
+    return (
+        (leg.fair_probability ** config.hit_weight)
+        * (leg.decimal_odds ** config.payout_weight)
+        * ((1.0 + max(leg.edge, -0.99)) ** config.edge_weight)
+    )
+
+
+def _insert_pareto(frontier: list[Slip], slip: Slip) -> None:
+    """Maintain the exact hit-probability/payout Pareto frontier for visited slips."""
+    for other in frontier:
+        if _dominates(other, slip):
+            return
+    frontier[:] = [other for other in frontier if not _dominates(slip, other)]
+    frontier.append(slip)
+
+
+def _dominates(a: Slip, b: Slip) -> bool:
+    return (
+        a.hit_probability >= b.hit_probability
+        and a.payout_multiple >= b.payout_multiple
+        and (
+            a.hit_probability > b.hit_probability
+            or a.payout_multiple > b.payout_multiple
         )
-        if not dominated:
-            frontier.append(slip)
-    return frontier
+    )
