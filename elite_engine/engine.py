@@ -294,7 +294,7 @@ def optimize_tickets(
     states = states[:beam_width]
 
     results: list[Ticket] = []
-    seen: set[tuple[tuple[str, str, str, float | None], ...]] = set()
+    seen: set[tuple[tuple[str, str, str, str], ...]] = set()
 
     for leg_count in range(2, max_legs + 1):
         next_states: list[tuple[int, tuple[Candidate, ...], Ticket]] = []
@@ -330,7 +330,7 @@ def optimize_tickets(
                             x.event_id,
                             x.market,
                             f"{x.outcome}|{x.description}",
-                            x.point,
+                            "" if x.point is None else f"{x.point:g}",
                         )
                         for x in legs
                     )
@@ -550,47 +550,94 @@ def scan_day(
         if todays:
             sports_with_events.append((sport, todays))
 
-    # Broad coverage first: all sports get moneyline/1X2 before depth.
+    # Broad coverage first: price one region across every sport before
+    # spending credits on cross-region line shopping or market depth.
     region_cost = len(regions)
+    primary_region = (regions[0],)
+    extra_regions = tuple(regions[1:])
     merged: dict[str, dict[str, Any]] = {}
     credits = 0
 
     for sport, _ in sports_with_events:
         key = str(sport["key"])
-        if credits + region_cost > max_credits:
-            skipped.append(f"{key}: h2h (budget)")
+        if credits + 1 > max_credits:
+            skipped.append(f"{key}: h2h primary-region (budget)")
             continue
         odds = provider.odds(
             key,
-            regions=regions,
+            regions=primary_region,
             markets=("h2h",),
             commence_from=start,
             commence_to=end,
         )
         _merge_events(merged, odds)
-        credits += region_cost
+        credits += 1
 
-    if include_spreads_totals:
-        depth_cost = 2 * region_cost
-        # Spend remaining depth credits where there are more same-day events.
+    # Once every possible sport has baseline pricing, add the requested
+    # foreign/domestic regions for line shopping.
+    if extra_regions:
+        extra_cost = len(extra_regions)
         for sport, todays in sorted(
             sports_with_events,
             key=lambda x: len(x[1]),
             reverse=True,
         ):
             key = str(sport["key"])
-            if credits + depth_cost > max_credits:
-                skipped.append(f"{key}: spreads/totals (budget)")
+            if credits + extra_cost > max_credits:
+                skipped.append(f"{key}: h2h extra-regions (budget)")
                 continue
             odds = provider.odds(
                 key,
-                regions=regions,
+                regions=extra_regions,
+                markets=("h2h",),
+                commence_from=start,
+                commence_to=end,
+            )
+            _merge_events(merged, odds)
+            credits += extra_cost
+
+    if include_spreads_totals:
+        # Add market depth in the same coverage-first order: primary region
+        # across sports, then extra regions where budget remains.
+        for sport, todays in sorted(
+            sports_with_events,
+            key=lambda x: len(x[1]),
+            reverse=True,
+        ):
+            key = str(sport["key"])
+            if credits + 2 > max_credits:
+                skipped.append(f"{key}: spreads/totals primary-region (budget)")
+                continue
+            odds = provider.odds(
+                key,
+                regions=primary_region,
                 markets=("spreads", "totals"),
                 commence_from=start,
                 commence_to=end,
             )
             _merge_events(merged, odds)
-            credits += depth_cost
+            credits += 2
+
+        if extra_regions:
+            extra_depth_cost = 2 * len(extra_regions)
+            for sport, todays in sorted(
+                sports_with_events,
+                key=lambda x: len(x[1]),
+                reverse=True,
+            ):
+                key = str(sport["key"])
+                if credits + extra_depth_cost > max_credits:
+                    skipped.append(f"{key}: spreads/totals extra-regions (budget)")
+                    continue
+                odds = provider.odds(
+                    key,
+                    regions=extra_regions,
+                    markets=("spreads", "totals"),
+                    commence_from=start,
+                    commence_to=end,
+                )
+                _merge_events(merged, odds)
+                credits += extra_depth_cost
 
     if deep and credits < max_credits:
         deep_events: list[dict[str, Any]] = []
